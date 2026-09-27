@@ -1,0 +1,14 @@
+import { ArrowLeft, ArrowRight, Clock3, MapPin, Navigation, Store } from 'lucide-react'
+import { Link, Navigate, useParams } from 'react-router-dom'
+import api from '../../api'
+import ProductCard from '../../components/shared/ProductCard'
+
+export default function MarketDetailPage() {
+  const { id } = useParams()
+  const db = api.snapshot()
+  const market = db.markets.find((item) => item.id === id)
+  if (!market) return <Navigate to="/markets" replace />
+  const farmers = db.farmers.filter((farmer) => farmer.status === 'approved' && farmer.marketIds.includes(id))
+  const products = db.products.filter((product) => product.marketIds.includes(id)).slice(0, 3)
+  return <main><section className="detail-hero"><div className="shell"><Link to="/markets" className="back-light"><ArrowLeft /> All markets</Link><p className="eyebrow eyebrow--gold">{market.day.toUpperCase()} · {market.date.toUpperCase()}</p><h1>{market.name}</h1><div className="detail-hero-meta"><span><Clock3 />{market.hours}</span><span><MapPin />{market.address}</span><span><Store />{market.stalls} stalls</span></div></div></section><section className="market-detail-map shell"><iframe title={`${market.name} map`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${market.lng - 0.025}%2C${market.lat - 0.015}%2C${market.lng + 0.025}%2C${market.lat + 0.015}&layer=mapnik&marker=${market.lat}%2C${market.lng}`} /><aside><p className="eyebrow">YOUR PICKUP POINT</p><h2>Your market collection point.</h2><p>{market.address}</p><p>{market.day} ? {market.hours}</p><p>Ask at the market entrance for your farmer?s stall.</p><a className="btn" href={`https://www.openstreetmap.org/directions?to=${market.lat},${market.lng}`} target="_blank" rel="noreferrer"><Navigation /> Get directions</a></aside></section><section className="section section--sage"><div className="shell"><div className="section-heading"><div><p className="eyebrow">GROWERS ATTENDING</p><h2>Who you’ll <em>meet.</em></h2></div><p>{farmers.length} MarketLink growers in the demo directory.</p></div><div className="farmer-mini-grid">{farmers.map((farmer) => <Link to={`/farmers/${farmer.id}`} key={farmer.id}><span>{farmer.initials}</span><div><h3>{farmer.name}</h3><p>{farmer.specialties.join(' · ')}</p></div><ArrowRight /></Link>)}</div></div></section><section className="section section--paper"><div className="shell"><div className="section-heading"><div><p className="eyebrow">AVAILABLE FOR PICKUP</p><h2>Build your <em>market basket.</em></h2></div><Link className="arrow-link" to={`/products?market=${market.id}`}>See all produce <ArrowRight /></Link></div><div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} farmer={db.farmers.find((item) => item.id === product.farmerId)} />)}</div></div></section></main>
+}
